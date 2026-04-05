@@ -1,0 +1,33 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+build/
+dist/
+
+# Git
+.git/
+.gitignore
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Frontend (built separately)
+frontend/
+
+# Docker
+Dockerfile*
+docker-compose*.yml
+
+# Misc
+*.log
+.DS_Store
+node_modules/

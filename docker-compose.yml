@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: futuretrust-backend
+    ports:
+      - "5000:5000"
+    environment:
+      - FLASK_ENV=production
+    env_file:
+      - .env
+    volumes:
+      # Mount model file as volume for faster builds
+      - ./compressed_malicious_url_rf_model.pkl:/app/compressed_malicious_url_rf_model.pkl:ro
+    networks:
+      - futuretrust-network
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: futuretrust-frontend
+    ports:
+      - "5174:5174"
+    environment:
+      - VITE_API_URL=http://localhost:5000
+    depends_on:
+      - backend
+    networks:
+      - futuretrust-network
+    restart: unless-stopped
+
+networks:
+  futuretrust-network:
+    driver: bridge
