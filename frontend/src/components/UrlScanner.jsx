@@ -49,7 +49,7 @@ export function UrlScanner() {
             value={url}
             onChange={(e) => setUrl(e.target.value)}
             placeholder="Enter URL..."
-            style={{ width: '100%', padding: '12px', marginBottom: '12px', borderRadius: '8px', border: '1px solid #374151', background: '#1f2028', color: '#f3f4f6' }}
+            style={{ width: '100%', padding: '12px', marginBottom: '12px', borderRadius: '8px', border: '1px solid #d1d5db', background: '#ffffff', color: '#111827' }}
           />
           <button type="submit" disabled={loading} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: 'none', background: '#7c3aed', color: 'white', cursor: 'pointer' }}>
             {loading ? 'Scanning...' : 'Scan'}
@@ -57,7 +57,7 @@ export function UrlScanner() {
         </form>
       </Card>
 
-      {error && <Card style={{ marginBottom: '16px', padding: '16px', color: '#ef4444' }}>{error}</Card>}
+      {error && <Card style={{ marginBottom: '16px', padding: '16px', color: '#ef4444', background: '#fef2f2' }}>{error}</Card>}
 
       {result && (
         <Card style={{ padding: '20px' }}>
@@ -71,22 +71,22 @@ export function UrlScanner() {
               {result.url_safety.override_reason}
             </div>
           )}
-          <div style={{ color: '#9ca3af', fontSize: '12px', marginBottom: '16px' }}>
+          <div style={{ color: '#6b7280', fontSize: '12px', marginBottom: '16px' }}>
             Class {result.url_safety?.prediction_class ?? 'N/A'}
           </div>
 
           {/* Content Credibility */}
           {result.content_credibility && (
-            <div style={{ marginBottom: '16px', padding: '12px', background: '#1f2028', borderRadius: '8px' }}>
-              <div style={{ fontSize: '14px', color: '#9ca3af', marginBottom: '4px' }}>Content Credibility</div>
-              <div style={{ fontSize: '18px', fontWeight: 'bold', color: verdictColors[result.content_credibility.verdict] || '#9ca3af' }}>
+            <div style={{ marginBottom: '16px', padding: '12px', background: '#f9fafb', borderRadius: '8px' }}>
+              <div style={{ fontSize: '14px', color: '#6b7280', marginBottom: '4px' }}>Content Credibility</div>
+              <div style={{ fontSize: '18px', fontWeight: 'bold', color: verdictColors[result.content_credibility.verdict] || '#6b7280' }}>
                 {result.content_credibility.verdict?.toUpperCase() || 'UNKNOWN'}
               </div>
-              <div style={{ fontSize: '12px', color: '#9ca3af' }}>
+              <div style={{ fontSize: '12px', color: '#6b7280' }}>
                 Confidence: {result.content_credibility.confidence || 'low'} | Score: {result.content_credibility.score ?? 'N/A'}
               </div>
               {result.content_credibility.summary && (
-                <div style={{ fontSize: '12px', color: '#d1d5db', marginTop: '8px', fontStyle: 'italic' }}>
+                <div style={{ fontSize: '12px', color: '#374151', marginTop: '8px', fontStyle: 'italic' }}>
                   "{result.content_credibility.summary.substring(0, 100)}..."
                 </div>
               )}
@@ -95,20 +95,20 @@ export function UrlScanner() {
 
           {/* Overall Risk */}
           {result.overall_risk && (
-            <div style={{ marginBottom: '16px', padding: '12px', background: '#1f2028', borderRadius: '8px' }}>
-              <div style={{ fontSize: '14px', color: '#9ca3af', marginBottom: '4px' }}>Overall Risk</div>
+            <div style={{ marginBottom: '16px', padding: '12px', background: '#f9fafb', borderRadius: '8px' }}>
+              <div style={{ fontSize: '14px', color: '#6b7280', marginBottom: '4px' }}>Overall Risk</div>
               <div style={{ fontSize: '18px', fontWeight: 'bold', color: result.overall_risk.level === 'high' ? '#ef4444' : result.overall_risk.level === 'medium' ? '#f59e0b' : '#22c55e' }}>
                 {result.overall_risk.level?.toUpperCase()}
               </div>
               {result.overall_risk.factors?.length > 0 && (
-                <div style={{ fontSize: '11px', color: '#9ca3af', marginTop: '4px' }}>
+                <div style={{ fontSize: '11px', color: '#6b7280', marginTop: '4px' }}>
                   {result.overall_risk.factors.join(', ')}
                 </div>
               )}
             </div>
           )}
 
-          <div style={{ color: '#f3f4f6', fontSize: '14px', wordBreak: 'break-all' }}>{result.url}</div>
+          <div style={{ color: '#111827', fontSize: '14px', wordBreak: 'break-all' }}>{result.url}</div>
         </Card>
       )}
     </div>

@@ -6,15 +6,15 @@ function UrlSafety() {
   const navigate = useNavigate();
 
   return (
-    <div style={{ minHeight: '100vh', background: '#0a0a0f' }}>
+    <div style={{ minHeight: '100vh', background: '#faf9f6' }}>
       {/* Header */}
       <header style={{
         padding: '20px 32px',
-        borderBottom: '1px solid #1f2937',
+        borderBottom: '1px solid #e5e7eb',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        background: '#0a0a0f',
+        background: '#ffffff',
         position: 'sticky',
         top: 0,
         zIndex: 100
@@ -24,23 +24,17 @@ function UrlSafety() {
           style={{ 
             fontSize: '24px', 
             fontWeight: '700', 
-            color: '#fff',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '12px'
+            color: '#111827',
+            cursor: 'pointer'
           }}
         >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: '28px', height: '28px', color: '#7c3aed' }}>
-            <path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-          </svg>
           FutureTrust
         </div>
         <nav style={{ display: 'flex', gap: '24px' }}>
-          <span onClick={() => navigate('/')} style={{ color: '#9ca3af', textDecoration: 'none', fontSize: '14px', cursor: 'pointer' }}>Home</span>
-          <span onClick={() => navigate('/source-checking')} style={{ color: '#9ca3af', textDecoration: 'none', fontSize: '14px', cursor: 'pointer' }}>Source Checker</span>
-          <span onClick={() => navigate('/bot-detection')} style={{ color: '#9ca3af', textDecoration: 'none', fontSize: '14px', cursor: 'pointer' }}>Bot Detection</span>
-          <span style={{ color: '#fff', textDecoration: 'none', fontSize: '14px' }}>URL Safety</span>
+          <span onClick={() => navigate('/')} style={{ color: '#6b7280', textDecoration: 'none', fontSize: '14px', cursor: 'pointer' }}>Home</span>
+          <span style={{ color: '#111827', textDecoration: 'none', fontSize: '14px', fontWeight: 500 }}>URL Safety</span>
+          <span onClick={() => navigate('/source-checking')} style={{ color: '#6b7280', textDecoration: 'none', fontSize: '14px', cursor: 'pointer' }}>Source Checker</span>
+          <span onClick={() => navigate('/bot-detection')} style={{ color: '#6b7280', textDecoration: 'none', fontSize: '14px', cursor: 'pointer' }}>Bot Detection</span>
         </nav>
       </header>
 
@@ -48,7 +42,7 @@ function UrlSafety() {
       <div style={{
         padding: '60px 32px 40px',
         textAlign: 'center',
-        background: 'linear-gradient(180deg, #111118 0%, #0a0a0f 100%)'
+        background: 'linear-gradient(180deg, #ffffff 0%, #faf9f6 100%)'
       }}>
         <div style={{
           display: 'inline-flex',
@@ -66,7 +60,7 @@ function UrlSafety() {
         <h1 style={{
           fontSize: 'clamp(32px, 5vw, 48px)',
           fontWeight: '700',
-          color: '#fff',
+          color: '#111827',
           margin: '0 0 16px'
         }}>
           URL Scanner

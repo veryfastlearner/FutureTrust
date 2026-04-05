@@ -105,15 +105,9 @@ function BotDetection() {
             fontSize: '24px', 
             fontWeight: '700', 
             color: '#111827',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '12px'
+            cursor: 'pointer'
           }}
         >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: '28px', height: '28px', color: '#7c3aed' }}>
-            <path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-          </svg>
           FutureTrust
         </div>
         <nav style={{ display: 'flex', gap: '24px' }}>
@@ -169,11 +163,11 @@ function BotDetection() {
           <form onSubmit={handleSubmit}>
             {/* File Upload Area */}
             <div style={{
-              border: '2px dashed #374151',
+              border: '2px dashed #d1d5db',
               borderRadius: '16px',
               padding: '48px 32px',
               textAlign: 'center',
-              background: '#16171d',
+              background: '#ffffff',
               marginBottom: '24px',
               transition: 'all 0.2s',
               cursor: 'pointer'
@@ -200,7 +194,7 @@ function BotDetection() {
                     <path d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                   </svg>
                 </div>
-                <p style={{ color: '#fff', fontSize: '16px', fontWeight: '500', margin: '0 0 8px' }}>
+                <p style={{ color: '#111827', fontSize: '16px', fontWeight: '500', margin: '0 0 8px' }}>
                   {selectedFile ? selectedFile.name : 'Click to upload or drag and drop'}
                 </p>
                 <p style={{ color: '#6b7280', fontSize: '14px', margin: 0 }}>
@@ -215,7 +209,7 @@ function BotDetection() {
                 marginBottom: '24px',
                 borderRadius: '12px',
                 overflow: 'hidden',
-                border: '1px solid #374151'
+                border: '1px solid #e5e7eb'
               }}>
                 <img 
                   src={preview} 
@@ -224,7 +218,7 @@ function BotDetection() {
                     width: '100%', 
                     maxHeight: '300px', 
                     objectFit: 'contain',
-                    background: '#16171d'
+                    background: '#f9fafb'
                   }} 
                 />
               </div>
@@ -252,8 +246,8 @@ function BotDetection() {
               style={{
                 width: '100%',
                 padding: '16px 32px',
-                background: selectedFile && !loading ? '#f59e0b' : '#374151',
-                color: '#0a0a0f',
+                background: selectedFile && !loading ? '#f59e0b' : '#d1d5db',
+                color: '#ffffff',
                 border: 'none',
                 borderRadius: '999px',
                 fontSize: '16px',
@@ -271,7 +265,7 @@ function BotDetection() {
                   <span style={{ 
                     width: '20px', 
                     height: '20px', 
-                    border: '2px solid #0a0a0f',
+                    border: '2px solid #ffffff',
                     borderTopColor: 'transparent',
                     borderRadius: '50%',
                     animation: 'spin 1s linear infinite'
@@ -294,14 +288,15 @@ function BotDetection() {
             <div style={{
               marginTop: '32px',
               padding: '24px',
-              background: '#16171d',
+              background: '#ffffff',
               borderRadius: '16px',
-              border: '1px solid #374151'
+              border: '1px solid #e5e7eb',
+              boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)'
             }}>
               <h3 style={{
                 fontSize: '20px',
                 fontWeight: '600',
-                color: '#fff',
+                color: '#111827',
                 margin: '0 0 24px',
                 textAlign: 'center'
               }}>
@@ -312,11 +307,17 @@ function BotDetection() {
               <div style={{
                 textAlign: 'center',
                 padding: '32px',
-                background: `linear-gradient(135deg, ${getConfidenceColor(result.detection.top_prediction.confidence)}20 0%, transparent 100%)`,
+                background: `linear-gradient(135deg, ${getConfidenceColor(result.detection.top_prediction.confidence)}15 0%, transparent 100%)`,
                 borderRadius: '12px',
                 marginBottom: '24px'
               }}>
-                <div style={{ fontSize: '64px', marginBottom: '16px' }}>
+                <div style={{ 
+                  fontSize: '48px', 
+                  fontWeight: '700',
+                  fontFamily: 'monospace',
+                  marginBottom: '16px',
+                  color: getConfidenceColor(result.detection.top_prediction.confidence)
+                }}>
                   {getClassIcon(result.detection.top_prediction.class)}
                 </div>
                 <div style={{
@@ -331,11 +332,11 @@ function BotDetection() {
                 <div style={{
                   fontSize: '48px',
                   fontWeight: '700',
-                  color: '#fff'
+                  color: '#111827'
                 }}>
                   {Math.round(result.detection.top_prediction.confidence * 100)}%
                 </div>
-                <p style={{ color: '#9ca3af', marginTop: '8px' }}>
+                <p style={{ color: '#6b7280', marginTop: '8px' }}>
                   {getClassDescription(result.detection.top_prediction.class)}
                 </p>
               </div>
@@ -350,13 +351,18 @@ function BotDetection() {
                       alignItems: 'center',
                       gap: '12px',
                       padding: '12px 16px',
-                      background: '#0a0a0f',
+                      background: '#f9fafb',
                       borderRadius: '8px'
                     }}>
-                      <span style={{ fontSize: '20px' }}>{getClassIcon(cls)}</span>
+                      <span style={{ 
+                        fontSize: '14px', 
+                        fontFamily: 'monospace',
+                        fontWeight: '600',
+                        color: getConfidenceColor(confidence)
+                      }}>{getClassIcon(cls)}</span>
                       <span style={{ 
                         width: '80px',
-                        color: '#fff',
+                        color: '#374151',
                         fontWeight: '500',
                         textTransform: 'capitalize'
                       }}>
@@ -365,7 +371,7 @@ function BotDetection() {
                       <div style={{
                         flex: 1,
                         height: '8px',
-                        background: '#1f2937',
+                        background: '#e5e7eb',
                         borderRadius: '4px',
                         overflow: 'hidden'
                       }}>
@@ -380,7 +386,7 @@ function BotDetection() {
                       <span style={{
                         width: '50px',
                         textAlign: 'right',
-                        color: '#9ca3af',
+                        color: '#6b7280',
                         fontSize: '14px',
                         fontWeight: '500'
                       }}>
@@ -395,9 +401,9 @@ function BotDetection() {
               <p style={{
                 marginTop: '24px',
                 paddingTop: '16px',
-                borderTop: '1px solid #374151',
+                borderTop: '1px solid #e5e7eb',
                 fontSize: '12px',
-                color: '#6b7280',
+                color: '#9ca3af',
                 textAlign: 'center'
               }}>
                 Model: {result.detection.model}
