@@ -1,6 +1,17 @@
+presentation_link:https://canva.link/bmrk6piv22m2ozo
+
 please check the following branches:
+
+
+
+
 ahmed for source credibility
+
+
 bacem for missinformation checking agent
+
+
+
 rayen for ai generation detection
 
 # FutureTrust
