@@ -32,13 +32,58 @@ CLASS_LABELS = {
     3: "Malware",
 }
 
-try:
-    model = joblib.load(MODEL_PATH)
-    print("[+] Model loaded successfully")
-    print("[+] Model classes_:", getattr(model, "classes_", None))
-except Exception as e:
-    print(f"[-] Error loading model: {e}")
-    model = None
+# FIND MODEL FILE
+def find_model():
+    """Find model file by searching project directory"""
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    
+    # Search paths in order
+    search_paths = [
+        os.path.join(script_dir, MODEL_PATH),  # Same directory as script
+        os.path.join(script_dir, "models", MODEL_PATH),  # models subdirectory
+        os.path.join(script_dir, "..", MODEL_PATH),  # Parent directory
+    ]
+    
+    print(f"\n{'='*70}")
+    print(f"[SEARCH] Looking for: {MODEL_PATH}")
+    print(f"{'='*70}")
+    
+    # First try explicit paths
+    for path in search_paths:
+        abs_path = os.path.abspath(path)
+        if os.path.exists(abs_path):
+            print(f"[FOUND] ✓ {abs_path}")
+            return abs_path
+        else:
+            print(f"[CHECK] ✗ {abs_path}")
+    
+    # If not found, search entire directory tree
+    print(f"\n[SEARCH] Searching entire project directory tree...")
+    for root, dirs, files in os.walk(script_dir):
+        for file in files:
+            if file == MODEL_PATH:
+                abs_path = os.path.abspath(os.path.join(root, file))
+                print(f"[FOUND] ✓ {abs_path}")
+                return abs_path
+    
+    print(f"[ERROR] Model file not found anywhere!")
+    print(f"{'='*70}\n")
+    return None
+
+model_path_used = find_model()
+model = None
+
+if model_path_used:
+    try:
+        model = joblib.load(model_path_used)
+        print(f"[+] Model loaded successfully")
+        print(f"[+] Model type: {type(model)}")
+        print(f"[+] Model classes: {getattr(model, 'classes_', None)}")
+    except Exception as e:
+        print(f"[-] Error loading model from {model_path_used}: {e}")
+        model = None
+else:
+    print("[!] WARNING: Model not loaded. URL safety predictions will not be available.")
 
 FEATURE_NAMES = [
     "url_len",
@@ -157,7 +202,14 @@ def home():
     return jsonify(
         {
             "status": "online",
-            "message": "API is running. Send POST to /predict with {'url': 'https://example.com'}",
+            "message": "API is running. Use these endpoints:",
+            "endpoints": {
+                "/predict": "ML model only (fast, no agent verification)",
+                "/check-credibility-stream": "ML model + Agent verification (recommended - includes overrides)",
+                "/check-credibility": "Agent credibility analysis only",
+                "/health": "Health check",
+                "/diagnose": "Diagnostic info about model loading"
+            },
             "model_loaded": model is not None,
             "model_classes": [str(c) for c in getattr(model, "classes_", [])] if model is not None else [],
         }
@@ -211,15 +263,25 @@ def check_credibility():
 
 @app.route("/check-credibility-stream", methods=["POST"])
 def check_credibility_stream():
-    """Quick credibility check for URL content - combines URL safety + credibility"""
+    """Quick credibility check for URL content - combines URL safety + credibility
+    
+    This endpoint:
+    1. Runs ML model URL safety check (fast)
+    2. Runs agent credibility verification (comprehensive)
+    3. Agent can OVERRIDE ML model if confident
+    """
+    print("\n[STREAM] ======== CREDIBILITY STREAM START ========")
+    
     data = request.get_json(silent=True)
     if not data or "url" not in data:
         return jsonify({"error": "Missing URL"}), 400
     
     url = str(data["url"]).strip()
+    print(f"[STREAM] Analyzing URL: {url}")
     
     try:
         # First check URL safety with ML model
+        print(f"[STREAM] Step 1: ML Model URL Safety Check...")
         url_result = None
         if model is not None:
             try:
@@ -233,10 +295,16 @@ def check_credibility_stream():
                         "prediction_label": get_prediction_label(prediction),
                         "confidence": max(probs) * 100
                     }
+                    print(f"[STREAM] ML Model result: {url_result['prediction_label']} ({url_result['confidence']:.1f}%)")
+                else:
+                    print(f"[STREAM] Invalid URL format: {norm_url}")
             except Exception as e:
-                print(f"[URL CHECK ERROR] {e}")
+                print(f"[STREAM ERROR] ML Model check failed: {e}")
+        else:
+            print(f"[STREAM] ML Model not available (not loaded)")
         
         # Then check credibility of content at that URL
+        print(f"[STREAM] Step 2: Agent Credibility Verification...")
         credibility_result = None
         if GROQ_API_KEY and TAVILY_API_KEY:
             try:
@@ -247,38 +315,69 @@ def check_credibility_stream():
                     "summary": cred_report.get("summary"),
                     "confidence": cred_report.get("confidence")
                 }
+                print(f"[STREAM] Agent result: {credibility_result['verdict']} ({credibility_result['confidence']}) - Score: {credibility_result['score']}")
             except Exception as e:
-                print(f"[CREDIBILITY CHECK ERROR] {e}")
+                print(f"[STREAM ERROR] Agent credibility check failed: {e}")
+        else:
+            print(f"[STREAM] Agent not configured (missing API keys)")
         
         # Override URL safety if agent is confident about content credibility
+        print(f"[STREAM] Step 3: Determining final verdict...")
         final_url_result = url_result
+        override_applied = False
+        
         if url_result and credibility_result:
             cred_confidence = credibility_result.get("confidence", "low")
             cred_verdict = credibility_result.get("verdict", "unknown")
             
-            # If agent is HIGHLY confident content is credible, trust benign URLs
+            print(f"[STREAM OVERRIDE CHECK] ML: {url_result.get('prediction_label')}, Agent: {cred_verdict} ({cred_confidence})")
+            
+            # If agent is HIGHLY confident content is credible, override bad ML predictions
             if cred_confidence == "high" and cred_verdict in ["credible", "mixed"]:
-                if url_result["prediction_class"] in [2, 3]:  # Phishing or Malware
-                    print(f"[OVERRIDE] Agent confident ({cred_confidence}) but URL model says {url_result['prediction_label']}")
+                if url_result["prediction_class"] in [1, 2, 3]:  # Any suspicious classification
+                    print(f"[STREAM OVERRIDE APPLIED] Agent HIGHLY confident ({cred_verdict}) - overriding ML model prediction from {url_result['prediction_label']} to Benign")
                     final_url_result = {
                         "prediction_class": 0,  # Override to Benign
                         "prediction_label": "Benign",
-                        "confidence": 100.0,
+                        "confidence": 95.0,
                         "overridden": True,
-                        "override_reason": f"Agent {cred_confidence} confidence: {cred_verdict}"
+                        "override_reason": f"Agent verified credible with {cred_confidence} confidence",
+                        "original_ml_prediction": url_result.get("prediction_label")
                     }
+                    override_applied = True
             
             # If agent is HIGHLY confident content is false/doubtful, downgrade safe URLs
             elif cred_confidence == "high" and cred_verdict in ["false", "doubtful"]:
-                if url_result["prediction_class"] == 0:  # Benign
-                    print(f"[OVERRIDE] Agent {cred_confidence} confidence: {cred_verdict}")
+                if url_result["prediction_class"] in [0, 1]:  # Benign or Defacement
+                    print(f"[STREAM OVERRIDE APPLIED] Agent HIGHLY confident ({cred_verdict}) - overriding ML model prediction from {url_result['prediction_label']} to Phishing")
                     final_url_result = {
                         "prediction_class": 2,  # Override to Phishing
                         "prediction_label": "Phishing", 
-                        "confidence": 75.0,
+                        "confidence": 85.0,
                         "overridden": True,
-                        "override_reason": f"Agent {cred_confidence} confidence: {cred_verdict}"
+                        "override_reason": f"Agent identified false/doubtful content with {cred_confidence} confidence",
+                        "original_ml_prediction": url_result.get("prediction_label")
                     }
+                    override_applied = True
+            
+            # MEDIUM confidence can also override if there's strong disagreement
+            elif cred_confidence == "medium":
+                if cred_verdict in ["credible", "mixed"] and url_result["prediction_class"] in [2, 3]:
+                    print(f"[STREAM OVERRIDE APPLIED] Agent medium-confident ({cred_verdict}) - soft override to Benign")
+                    final_url_result = {
+                        "prediction_class": 0,
+                        "prediction_label": "Benign",
+                        "confidence": 70.0,
+                        "overridden": True,
+                        "override_reason": f"Agent verified credible with {cred_confidence} confidence (soft override)",
+                        "original_ml_prediction": url_result.get("prediction_label")
+                    }
+                    override_applied = True
+            
+            if not override_applied:
+                print(f"[STREAM] No override applied - insufficient confidence or good agreement between systems")
+        
+        print(f"[STREAM] ======== FINAL RESULT: {final_url_result.get('prediction_label') if final_url_result else 'N/A'} ========\n")
         
         return jsonify({
             "url": url,
@@ -288,6 +387,9 @@ def check_credibility_stream():
         })
         
     except Exception as e:
+        print(f"[STREAM ERROR] {e}")
+        import traceback
+        traceback.print_exc()
         return jsonify({"error": str(e)}), 500
 
 
@@ -349,25 +451,64 @@ def health():
     )
 
 
+@app.route("/diagnose", methods=["GET"])
+def diagnose():
+    """Diagnostic endpoint to verify all components are working"""
+    diagnostics = {
+        "model": {
+            "loaded": model is not None,
+            "path_used": model_path_used,
+            "type": str(type(model)) if model is not None else None,
+            "classes": [str(c) for c in getattr(model, "classes_", [])] if model is not None else None,
+            "feature_count": len(FEATURE_NAMES),
+            "features": FEATURE_NAMES
+        },
+        "api_keys": {
+            "GROQ_API_KEY": "✓ Set" if GROQ_API_KEY else "✗ Missing",
+            "TAVILY_API_KEY": "✓ Set" if TAVILY_API_KEY else "✗ Missing"
+        },
+        "script_info": {
+            "script_dir": os.path.dirname(os.path.abspath(__file__)),
+            "current_dir": os.getcwd()
+        }
+    }
+    
+    return jsonify(diagnostics)
+
+
 @app.route("/predict", methods=["POST"])
 def predict():
+    print(f"\n[PREDICT] Endpoint called. Model loaded: {model is not None}, Path used: {model_path_used}")
+    
     if model is None:
-        return jsonify({"error": "Model not loaded. Check server logs."}), 500
+        error_msg = f"Model not loaded. Expected at: {os.path.abspath(MODEL_PATH)}"
+        print(f"[PREDICT ERROR] {error_msg}")
+        return jsonify({"error": error_msg, "model_loaded": False}), 500
 
     data = request.get_json(silent=True)
     if not data or "url" not in data:
+        print("[PREDICT ERROR] Missing URL in payload")
         return jsonify({"error": "Missing URL in JSON payload."}), 400
 
     try:
         raw_url = str(data["url"]).strip()
+        print(f"[PREDICT] Raw URL: {raw_url}")
+        
         url = normalize_url(raw_url)
+        print(f"[PREDICT] Normalized URL: {url}")
 
         if not is_valid_url(url):
+            print(f"[PREDICT ERROR] Invalid URL format: {url}")
             return jsonify({"error": "Invalid URL format. Example: https://google.com"}), 400
 
+        print(f"[PREDICT] Extracting features for: {url}")
         features_df = extract_features(url)
+        print(f"[PREDICT] Features extracted: {features_df.iloc[0].to_dict()}")
+        
+        print(f"[PREDICT] Running model prediction...")
         prediction = model.predict(features_df)[0]
         probabilities = model.predict_proba(features_df)[0]
+        print(f"[PREDICT] Prediction: {prediction}, Probabilities: {probabilities}")
 
         model_classes = list(getattr(model, "classes_", []))
         if not model_classes:
@@ -380,12 +521,8 @@ def predict():
 
         predicted_label = get_prediction_label(prediction)
 
-        print(f"[DEBUG] URL: {url}")
-        print(f"[DEBUG] Model classes: {model_classes}")
-        print(f"[DEBUG] Prediction raw: {prediction}")
-        print(f"[DEBUG] Prediction label: {predicted_label}")
-        print(f"[DEBUG] Features: {features_df.iloc[0].to_dict()}")
-        print(f"[DEBUG] Probabilities: {probability_map}")
+        print(f"[PREDICT SUCCESS] Label: {predicted_label}, Classes: {model_classes}")
+        print(f"[PREDICT] Probabilities: {probability_map}")
 
         return jsonify(
             {
@@ -395,11 +532,16 @@ def predict():
                 "model_classes": [str(c) for c in model_classes],
                 "probabilities": probability_map,
                 "features": features_df.iloc[0].to_dict(),
+                "model_loaded": True,
+                "model_path": model_path_used,
             }
         )
 
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        print(f"[PREDICT EXCEPTION] {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({"error": str(e), "type": type(e).__name__}), 500
 
 
 @app.route("/analyze-content", methods=["POST"])
