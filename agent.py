@@ -11,7 +11,11 @@ from dotenv import load_dotenv
 from groq import Groq
 from tavily import TavilyClient
 
-load_dotenv()
+# Load .env from script directory (works in both local and Docker)
+# Don't override existing env vars (docker-compose sets them)
+env_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '.env')
+if os.path.exists(env_path):
+    load_dotenv(env_path, override=False)
 
 # =========================
 # CONFIG
@@ -20,7 +24,7 @@ DEFAULT_MODEL = "llama-3.3-70b-versatile"
 DEFAULT_MAX_RESULTS = 6
 
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
-TAVILY_API_KEY = os.getenv("TAVILY_API_KEY") or os.getenv("tavily-api-key")
+TAVILY_API_KEY = os.getenv("TAVILY_API_KEY") or os.getenv("tavily-api-key") or os.getenv("tavily_api_key")
 MODEL = (os.getenv("MODEL") or DEFAULT_MODEL).strip().strip("\"'")
 
 # Fallback if MODEL is invalid (contains only numbers or slashes)

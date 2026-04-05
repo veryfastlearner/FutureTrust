@@ -74,7 +74,7 @@ export function CredibilityChecker() {
     <div style={{ maxWidth: '700px', margin: '0 auto', padding: '20px' }}>
       {/* Header Card */}
       <Card style={{ marginBottom: '16px', padding: '20px', textAlign: 'center' }}>
-        <h2 style={{ margin: 0, color: '#c084fc' }}>🔍 Credibility Checker</h2>
+        <h2 style={{ margin: 0, color: '#c084fc' }}>Credibility Checker</h2>
         <p style={{ margin: '8px 0 0 0', color: '#9ca3af', fontSize: '14px' }}>
           Check if news, claims, or content is trustworthy
         </p>

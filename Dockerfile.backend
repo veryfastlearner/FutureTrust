@@ -19,7 +19,6 @@ COPY inspector.py .
 COPY final_agent.py .
 COPY botdetection.py .
 COPY urlbert.py .
-COPY .env .
 
 # Copy model file (large file, do this last)
 COPY compressed_malicious_url_rf_model.pkl .

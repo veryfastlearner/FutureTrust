@@ -16,6 +16,9 @@ from agent import analyze_input, MODEL, GROQ_API_KEY, TAVILY_API_KEY
 from inspector import ContentInspector, get_inspector
 from final_agent import FinalFrontierAgent, get_final_agent, synthesize_results
 
+# Import bot detection (lazy loaded)
+from botdetection import detect_profile_type
+
 app = Flask(__name__)
 CORS(app)
 
@@ -510,6 +513,34 @@ def check_url_pipeline(url: str) -> dict:
             result["agent_error"] = str(e)
     
     return result
+
+
+@app.route("/detect-bot", methods=["POST"])
+def detect_bot():
+    """Detect if a profile image is a bot, cyborg, real, or verified account"""
+    try:
+        if 'image' not in request.files:
+            return jsonify({"error": "No image file provided"}), 400
+        
+        image_file = request.files['image']
+        if image_file.filename == '':
+            return jsonify({"error": "Empty filename"}), 400
+        
+        # Read image bytes
+        image_bytes = image_file.read()
+        
+        # Run detection
+        result = detect_profile_type(image_bytes)
+        
+        return jsonify({
+            "success": True,
+            "filename": image_file.filename,
+            "detection": result
+        })
+        
+    except Exception as e:
+        print(f"[BOT DETECTION ERROR] {e}")
+        return jsonify({"error": str(e)}), 500
 
 
 if __name__ == "__main__":
