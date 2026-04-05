@@ -12,6 +12,10 @@ from flask_cors import CORS
 # Import agent functions for credibility checking
 from agent import analyze_input, MODEL, GROQ_API_KEY, TAVILY_API_KEY
 
+# Import multi-layer architecture
+from inspector import ContentInspector, get_inspector
+from final_agent import FinalFrontierAgent, get_final_agent, synthesize_results
+
 app = Flask(__name__)
 CORS(app)
 
@@ -393,6 +397,119 @@ def predict():
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+
+@app.route("/analyze-content", methods=["POST"])
+def analyze_content():
+    """
+    Multi-layer content analysis pipeline:
+    Layer 1: Content Inspector - detects obvious red flags, URLs, accounts
+    Layer 2: URL Safety Check (if URLs found) - RF model + agent verification
+    Layer 3: Bot Detection (if accounts found) - profile analysis
+    Layer 4: Final Frontier Agent - synthesizes all results with justification
+    """
+    data = request.get_json(silent=True)
+    if not data or "content" not in data:
+        return jsonify({"error": "Missing 'content' field"}), 400
+    
+    content = str(data["content"]).strip()
+    if not content:
+        return jsonify({"error": "Empty content"}), 400
+    
+    try:
+        print(f"[MULTI-LAYER] Analyzing content: {content[:100]}...")
+        
+        # Initialize results
+        layer_results = {
+            "layer_1_inspector": None,
+            "layer_2_url_check": None,
+            "layer_3_bot_check": None,
+            "layer_4_final_verdict": None
+        }
+        
+        # ========== LAYER 1: CONTENT INSPECTOR ==========
+        print("[LAYER 1] Running Content Inspector...")
+        inspector = get_inspector()
+        inspection = inspector.analyze(content)
+        layer_results["layer_1_inspector"] = inspector.get_summary(inspection)
+        
+        # ========== LAYER 2: URL SAFETY CHECK (if needed) ==========
+        url_result = None
+        if inspection.needs_url_check and inspection.urls_found:
+            print(f"[LAYER 2] Checking {len(inspection.urls_found)} URLs...")
+            # Check first URL with our pipeline
+            url = inspection.urls_found[0]
+            url_result = check_url_pipeline(url)
+            layer_results["layer_2_url_check"] = url_result
+        
+        # ========== LAYER 3: BOT DETECTION (if needed) ==========
+        bot_result = None
+        if inspection.needs_bot_check:
+            print("[LAYER 3] Bot detection requested...")
+            # Bot detection requires image - we'll note it but skip for text-only
+            bot_result = {"note": "Bot detection requires profile image upload", "skipped": True}
+            layer_results["layer_3_bot_check"] = bot_result
+        
+        # ========== LAYER 4: FINAL FRONTIER AGENT ==========
+        print("[LAYER 4] Running Final Frontier Agent...")
+        final_verdict = synthesize_results(
+            inspector_result=layer_results["layer_1_inspector"],
+            content=content,
+            url_result=url_result,
+            bot_result=bot_result
+        )
+        layer_results["layer_4_final_verdict"] = final_verdict
+        
+        print(f"[FINAL VERDICT] {final_verdict.get('verdict', 'unknown')} - {final_verdict.get('confidence', 'unknown')}")
+        
+        return jsonify({
+            "content": content,
+            "layers": layer_results,
+            "final_verdict": final_verdict.get("verdict"),
+            "final_confidence": final_verdict.get("confidence"),
+            "final_summary": final_verdict.get("summary"),
+            "recommendation": final_verdict.get("recommendation"),
+            "risk_level": final_verdict.get("risk_level")
+        })
+        
+    except Exception as e:
+        print(f"[MULTI-LAYER ERROR] {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({"error": str(e)}), 500
+
+
+def check_url_pipeline(url: str) -> dict:
+    """Run URL through our safety pipeline"""
+    result = {"url": url}
+    
+    # 1. ML Model check (if available)
+    if model is not None:
+        try:
+            norm_url = normalize_url(url)
+            if is_valid_url(norm_url):
+                features_df = extract_features(norm_url)
+                prediction = model.predict(features_df)[0]
+                probs = model.predict_proba(features_df)[0]
+                result["prediction_class"] = int(prediction)
+                result["prediction_label"] = get_prediction_label(prediction)
+                result["confidence"] = max(probs) * 100
+        except Exception as e:
+            print(f"[URL PIPELINE ERROR] {e}")
+            result["model_error"] = str(e)
+    
+    # 2. Agent credibility check (if configured)
+    if GROQ_API_KEY and TAVILY_API_KEY:
+        try:
+            from agent import analyze_input
+            agent_report = analyze_input(url, "url", 4)
+            result["agent_verdict"] = agent_report.get("verdict")
+            result["agent_confidence"] = agent_report.get("confidence")
+        except Exception as e:
+            print(f"[URL AGENT ERROR] {e}")
+            result["agent_error"] = str(e)
+    
+    return result
 
 
 if __name__ == "__main__":

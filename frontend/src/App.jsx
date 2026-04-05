@@ -37,7 +37,7 @@ function App() {
               fontWeight: activeTab === 'url' ? 'bold' : 'normal'
             }}
           >
-            🔒 URL Scanner
+            URL Scanner
           </button>
           <button
             onClick={() => setActiveTab('credibility')}
@@ -52,7 +52,7 @@ function App() {
               fontWeight: activeTab === 'credibility' ? 'bold' : 'normal'
             }}
           >
-            🔍 Credibility Checker
+            Credibility Checker
           </button>
         </div>
 
